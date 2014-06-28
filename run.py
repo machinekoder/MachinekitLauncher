@@ -1,6 +1,8 @@
 #!/usr/bin/python
 
 import sys
+import os
+import subprocess
 from time import *
 import MachinekitLauncher as launcher
 
@@ -9,13 +11,15 @@ launcher.registerExitHandler()
 launcher.setDebugLevel(5)
 launcher.setMachinekitIni('machinekit.ini')
 
+os.chdir(os.path.dirname(os.path.realpath(__file__)))
+
 try:
-    launcher.ripEnvironment('/home/machinekit/machinekit/')
+    launcher.ripEnvironment()
     launcher.checkInstallation()
     launcher.clearSession()
     launcher.startProcess("configserver 'uis/HalanduinoDemo.Control'")
     launcher.startRealtime()
-    launcher.loadHalfile("Halanduino.hal")
+    launcher.loadHalFile("Halanduino.hal")
 except subprocess.CalledProcessError:
     sys.exit(1)
 
