@@ -3,6 +3,7 @@ import sys
 from time import *
 import subprocess
 import signal
+from machinekit import compat
 
 _processes = []
 
@@ -12,14 +13,18 @@ def cleanup():
     stopRealtime()
 
 
+def checkCommand(command):
+    process = subprocess.Popen('which ' + command, stdout=subprocess.PIPE, shell=True)
+    process.wait()
+    if process.returncode != 0:
+        print((command + ' not found, check Machinekit installation'))
+        sys.exit(1)
+
+
 def checkInstallation():
     commands = ['realtime', 'configserver', 'halcmd', 'haltalk', 'webtalk']
     for command in commands:
-        process = subprocess.Popen('which ' + command, stdout=subprocess.PIPE, shell=True)
-        process.wait()
-        if process.returncode != 0:
-            print((command + ' not found, check Machinekit installation'))
-            sys.exit(1)
+        checkCommand(command)
 
 
 def clearSession():
@@ -62,7 +67,7 @@ def stopProcesses():
     for process in _processes:
         sys.stdout.write('stopping ' + process.command.split(None, 1)[0] + '... ')
         sys.stdout.flush()
-        process.kill()
+        process.terminate()
         process.wait()
         sys.stdout.write('done\n')
 
@@ -75,10 +80,28 @@ def loadHalFile(filename):
 
 
 def loadBbioFile(filename):
+    checkCommand('config-pin')
     sys.stdout.write("loading " + filename + '... ')
     sys.stdout.flush()
-    subprocess.check_call('config-pin ' + filename, shell=True)
+    subprocess.check_call('config-pin -f ' + filename, shell=True)
     sys.stdout.write('done\n')
+
+
+def installComp(filename):
+    install = True
+    base = os.path.splitext(os.path.basename(filename))[0]
+    modulePath = compat.get_rtapi_config("RTLIB_DIR") + '/' + compat.default_flavor().name + '/' + base + '.so'
+    if os.path.exists(modulePath):
+    	compTime = os.path.getmtime(filename)
+    	moduleTime = os.path.getmtime(modulePath)
+        if (compTime < moduleTime):
+            install = False
+
+    if install is True:
+        sys.stdout.write("installing " + filename + '... ')
+        sys.stdout.flush()
+        subprocess.check_call('comp --install ' + filename, shell=True)
+        sys.stdout.write('done\n')
 
 
 def startRealtime():

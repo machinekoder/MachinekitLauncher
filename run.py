@@ -4,7 +4,7 @@ import sys
 import os
 import subprocess
 from time import *
-import MachinekitLauncher as launcher
+from machinekit import launcher
 
 launcher.registerExitHandler()
 
